@@ -22,27 +22,124 @@
    };
 */
 
-function render(rootContainer, elements) {
-   elements.forEach((element) => {
-      const el = document.createElement(element.type);
-      el.id = element.props && element.props.id;
-      el.innerHTML = element.children && element.children;
+// valid types of element (limited for now)
+const validHtmlElements = [
+   "div",
+   "span",
+   "p",
+   "h1",
+   "h2",
+   "h3",
+   "h4",
+   "h5",
+   "h6",
+   "ul",
+   "ol",
+   "li",
+   "a",
+   "button",
+   "input",
+   "textarea",
+   "form",
+   "label",
+   "select",
+   "option",
+   "img",
+   "nav",
+   "header",
+   "footer",
+   "main",
+   "section",
+   "article",
+];
 
-      rootContainer.appendChild(el);
-   });
+const validProps = [
+   "id",                // Identifier for the element
+   "className",         // CSS class (use "className" instead of "class" in JS)
+   "style",             // Inline CSS styles (as an object)
+   "title",             // Tooltip text
+   "alt",               // Alternative text for images
+   "src",               // Source URL for images, scripts, etc.
+   "href",              // Hyperlink reference (used with <a>)
+   "type",              // Type for inputs, buttons, etc.
+   "name",              // Name attribute for inputs, forms, etc.
+   "value",             // Value for inputs, selects, etc.
+   "placeholder",       // Placeholder text for inputs
+   "disabled",          // Disable interaction for inputs, buttons, etc.
+   "readOnly",          // Make inputs read-only
+   "checked",           // Checkbox/radio button checked state
+   "onClick",           // Click event handler
+   "onChange",          // Change event handler
+   "onSubmit",          // Submit event handler for forms
+   "onMouseEnter",      // Mouse enter event handler
+   "onMouseLeave",      // Mouse leave event handler
+   "onFocus",           // Focus event handler
+   "onBlur",            // Blur (lose focus) event handler
+];
+
+function isValidHTMLElement(tag) {
+   return validHtmlElements.includes(tag.toLowerCase());
 };
 
-function createElement(type, props, children) {
+function isValidHTMLProp(prop) {
+   return validProps.includes(prop);
+};
+
+function render(element, rootContainer) {
+   // check if the element is valid
+   const isValid = isValidHTMLElement(element.type);
+   if (!isValid) {
+      console.error("Invalid HTML element:", element.type, "\nElement:", element);
+      return;
+   };
+
+   // create element
+   const el = document.createElement(element.type);
+
+   // add props if any
+   if (element.props) {
+      for (const [key, value] of Object.entries(element.props)) {
+         if (!isValidHTMLProp(key)) continue;
+
+         el[key] = value;
+      };
+   };
+
+   // add children
+   if (Array.isArray(element.children)) {
+      element.children.forEach((child) => {
+         const childElement = typeof child === "object"
+            ? render(child)
+            : document.createTextNode(child);
+
+         el.appendChild(childElement);
+      });
+   } else {
+      const childElement = typeof element.children === "object" 
+         ? render(element.children)
+         : document.createTextNode(element.children);
+         
+      el.appendChild(childElement);
+   };
+
+   return el;
+};
+
+function createElement(type, props, ...children) {
    return { type, props, children };
 };
 
-const elements = [];
-
-const div1 = createElement("div", null, "div 1");
-const p1 = createElement("p", { id: "paragraph" }, "paragraph");
-const p2 = createElement("p", { id: "p2" }, null);
-
-elements.push(div1, p1, p2);
+const element = createElement(
+   "div",
+   { className: "main" },
+   createElement("div", null, "First div"),
+   createElement(
+      "div",
+      { className: "border" },
+      createElement("p", { className: "para" }, "Hi from inside")
+   ),
+);
 
 const rootContainer = document.getElementById("root");
-render(rootContainer, elements);
+const renderedElement = render(element, rootContainer);
+rootContainer.appendChild(renderedElement);
